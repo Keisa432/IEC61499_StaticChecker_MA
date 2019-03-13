@@ -2,61 +2,11 @@
 import os
 from lxml import etree
 from lxml import objectify
+from xml_elems import DtdXmlObj
 
-#add class functionality to dict
-#http://code.activestate.com/recipes/573463-converting-xml-to-dictionary-and-back/
-class XmlDictObject(dict):
-    """
-    Adds object like functionality to the standard dictionary.
-    """
+iec_xml_elements = dict()
 
-    def __init__(self, initdict=None):
-        if initdict is None:
-            initdict = {}
-        dict.__init__(self, initdict)
-    
-    def __getattr__(self, item):
-        return self.__getitem__(item)
-    
-    def __setattr__(self, item, value):
-        self.__setitem__(item, value)
-    
-    def __str__(self):
-        if self.has_key('_text'):
-            return self.__getitem__('_text')
-        else:
-            return ''
-
-    @staticmethod
-    def Wrap(x):
-        """
-        Static method to wrap a dictionary recursively as an XmlDictObject
-        """
-
-        if isinstance(x, dict):
-            return XmlDictObject((k, XmlDictObject.Wrap(v)) for (k, v) in x.iteritems())
-        elif isinstance(x, list):
-            return [XmlDictObject.Wrap(v) for v in x]
-        else:
-            return x
-
-    @staticmethod
-    def _UnWrap(x):
-        if isinstance(x, dict):
-            return dict((k, XmlDictObject._UnWrap(v)) for (k, v) in x.iteritems())
-        elif isinstance(x, list):
-            return [XmlDictObject._UnWrap(v) for v in x]
-        else:
-            return x
-        
-    def UnWrap(self):
-        """
-        Recursively converts an XmlDictObject to a standard dictionary and returns the result.
-        """
-
-        return XmlDictObject._UnWrap(self)
-
-def getDtdFilesFromFolder(folder):
+def get_dtd_files_from_folder(folder):
   """Gets dtd files which are located in folder
   
   Arguments:
@@ -65,29 +15,48 @@ def getDtdFilesFromFolder(folder):
   Returns:
     List -- List containing dtd filenames
   """
-
   return [ os.path.join(folder, file) for file in os.listdir(folder) if file.endswith('.dtd')]
 
-def parseDtdFiles(dtdList):
+def element_repo_from_dtd_list(dtdList):
+  """ Tries to parse the files in dtdList and extracts the XML element
+  and adds them to the global element dictionary.
+  
+  Arguments:
+    dtdList {List} -- List containing DTD file paths
+  """
+
   for dtd in dtdList:
     with open(dtd) as source:
-      tree = etree.DTD(source)
-      for elem in tree.elements():
-        print(elem)
-        for k in elem.content:
-          print ('content of' + elem.name + 'is' + k)
-  pass
+      try:
+        content = parse_dtd_file(source)
+      except Exception as error:
+        print(error)
+        continue
+      add_dtd_content(source.name, content)
+      del content
 
-dtd = getDtdFilesFromFolder('./dtd')
-parseDtdFiles(dtd)
-#dtd as object like dict, maybe not needed -> simple dict with dtd elements as entries? TODO workout parse function
-# dict :
-#     {
-#     [test]: (name of dtd file as key)
-#           { 
-#             [sub]: dtd elem (first element of test.dtd file)
-#           }
-#     [nextDtd]:
-#     }
-#dtd strat, parse xml get right dtd verify then parse known elements to dict and keep simple metric counters
+def parse_dtd_file(file):
+  return etree.DTD(file)
+
+def add_dtd_content(source=None, dtd_content=None):
+  if source is None:
+    raise NameError('DTD name not defined. Cannot create subscope')
+  sub_scope = iec_xml_elements[extract_filename_from_path(source)] = dict()
+
+  if dtd_content is not None:
+    for elem in dtd_content.elements():
+      obj = DtdXmlObj(elem)
+      sub_scope.update({obj.name :obj})
+
+
+def extract_filename_from_path(path):
+  return os.path.splitext(os.path.basename(path))[0]
+
+
+if __name__ == '__main__':
+  dtd = get_dtd_files_from_folder('./src/dtd')
+  element_repo_from_dtd_list(dtd)
+  print(iec_xml_elements)
+  elem = iec_xml_elements['DataType']['DataType']
 #TODO: work out simple metrics that can be counted during parsing
+#TODO parse FB xml and match with iec_elements plus verify with dtd
