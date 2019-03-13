@@ -3,6 +3,7 @@ import os
 from lxml import etree
 from lxml import objectify
 from xml_elems import DtdXmlObj
+import time
 
 iec_xml_elements = dict()
 
@@ -39,6 +40,16 @@ def parse_dtd_file(file):
   return etree.DTD(file)
 
 def add_dtd_content(source=None, dtd_content=None):
+  """[summary]
+  
+  Keyword Arguments:
+    source {String} -- path to dtd file (default: {None})
+    dtd_content {etree.DtdObject} -- parsed dtd file (default: {None})
+  
+  Raises:
+    NameError -- raised if no source path is specified
+  """
+
   if source is None:
     raise NameError('DTD name not defined. Cannot create subscope')
   sub_scope = iec_xml_elements[extract_filename_from_path(source)] = dict()
@@ -50,13 +61,24 @@ def add_dtd_content(source=None, dtd_content=None):
 
 
 def extract_filename_from_path(path):
+  """Gets filename with out extension from path
+  
+  Arguments:
+    path {String} -- Path to file
+  
+  Returns:
+    String -- filename
+  """
+
   return os.path.splitext(os.path.basename(path))[0]
 
 
 if __name__ == '__main__':
+  start = time.time()
   dtd = get_dtd_files_from_folder('./src/dtd')
   element_repo_from_dtd_list(dtd)
-  print(iec_xml_elements)
-  elem = iec_xml_elements['DataType']['DataType']
+  end = time.time()
+  print(end - start)
 #TODO: work out simple metrics that can be counted during parsing
 #TODO parse FB xml and match with iec_elements plus verify with dtd
+#TODO define metric modules

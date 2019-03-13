@@ -11,7 +11,7 @@ class DtdXmlObj(dict):
     self.name = None
     self.type = None
     self.contains = []
-    self.attributes = set()
+    self.attributes = []
 
     if dtd_elem is not None:
       self.name = dtd_elem.name
@@ -20,10 +20,15 @@ class DtdXmlObj(dict):
 
   
   def __set_obj_data(self, dtd_elem):
+    """Sets sets Dtd element properties
+    
+    Arguments:
+      dtd_elem {etree.DtdObject} -- parsed dtd file
+    """
+
     if self.type == 'element' and dtd_elem.content is not None:
       self.__get_element_content(dtd_elem.content)
-      self.__get_element_attributes(dtd_elem)
-    pass
+    self.__get_element_attributes(dtd_elem)
   
   def __get_element_content(self, content):
     """Extracts the sub elements form content. Content is organized as binary tree
