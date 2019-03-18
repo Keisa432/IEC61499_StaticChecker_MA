@@ -3,9 +3,9 @@ import os
 from lxml import etree
 from lxml import objectify
 from xml_elems import DtdXmlObj
-import time
 
-iec_xml_elements = dict()
+iec_xml_elements = dict() #used for xml parsing an metric processing?
+dtd_xml_trees = dict() # used for validation after parsing
 
 def get_dtd_files_from_folder(folder):
   """Gets dtd files which are located in folder
@@ -18,7 +18,7 @@ def get_dtd_files_from_folder(folder):
   """
   return [ os.path.join(folder, file) for file in os.listdir(folder) if file.endswith('.dtd')]
 
-def element_repo_from_dtd_list(dtdList):
+def element_index_from_dtd_list(dtdList):
   """ Tries to parse the files in dtdList and extracts the XML element
   and adds them to the global element dictionary.
   
@@ -40,7 +40,8 @@ def parse_dtd_file(file):
   return etree.DTD(file)
 
 def add_dtd_content(source=None, dtd_content=None):
-  """[summary]
+  """adds content of dtd file to element repository. A subscope
+  for the dtd file is created
   
   Keyword Arguments:
     source {String} -- path to dtd file (default: {None})
@@ -53,7 +54,8 @@ def add_dtd_content(source=None, dtd_content=None):
   if source is None:
     raise NameError('DTD name not defined. Cannot create subscope')
   sub_scope = iec_xml_elements[extract_filename_from_path(source)] = dict()
-
+  dtd_xml_trees[extract_filename_from_path(source)] = dtd_content
+  
   if dtd_content is not None:
     for elem in dtd_content.elements():
       obj = DtdXmlObj(elem)
@@ -74,11 +76,19 @@ def extract_filename_from_path(path):
 
 
 if __name__ == '__main__':
-  start = time.time()
   dtd = get_dtd_files_from_folder('./src/dtd')
-  element_repo_from_dtd_list(dtd)
-  end = time.time()
-  print(end - start)
+  element_index_from_dtd_list(dtd)
 #TODO: work out simple metrics that can be counted during parsing
 #TODO parse FB xml and match with iec_elements plus verify with dtd
+#TODO init routine for parser, create parser class ?
 #TODO define metric modules
+#TODO toplevel class provides add_stats -> sub module references stats
+#TODO open/close functions for reset/finish checking 
+#TODO raw metrics: nummber of fbs, fbtypes, ecc states, events, inputs, outputs, ecc vertrices
+#TODO further metrics: undefined datatypes, cycles in ecc, not reacheable ecc states, locks in ecc,...
+#TODO define how checkers know which elements to check -> list dereived from dtds?
+#TODO draw graph, what types are there!!!
+#TODO main program searches for sys file -> tries to find referenced fb/types  -> hash files to recognize if something changed? (Would need background timer/thread that checks files and makrs them as "dirty")
+#TODO each checker has a check function -> sorted list by prio -> do_check iterates over all checkers
+#TODO define output format of msg, write list to file , maybe GUI output?? (super extra) would be useful for graphs
+#TODO output would be filename, elment name, type (err/warn), message
