@@ -2,7 +2,6 @@
 import os
 from lxml import etree
 from lxml import objectify
-from xml_elems import DtdXmlObj
 
 iec_xml_elements = dict() #used for xml parsing an metric processing?
 dtd_xml_trees = dict() # used for validation after parsing
