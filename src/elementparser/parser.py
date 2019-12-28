@@ -1,82 +1,64 @@
 #!/usr/bin/python3
-import os
+from typing import Any
+from pathlib import Path
 from lxml import etree
-from lxml import objectify
 
-iec_xml_elements = dict() #used for xml parsing an metric processing?
-dtd_xml_trees = dict() # used for validation after parsing
+class ElementParser:
+  """ Parser class for IEC61499 XML files
 
-def get_dtd_files_from_folder(folder):
-  """Gets dtd files which are located in folder
-  
-  Arguments:
-    folder {String} -- Path to folder containing dtd files
-  
-  Returns:
-    List -- List containing dtd filenames
+    Parses XML files containing IEC61499 elements and validates
+    them using DTD files.
   """
-  return [ os.path.join(folder, file) for file in os.listdir(folder) if file.endswith('.dtd')]
-
-def element_index_from_dtd_list(dtdList):
-  """ Tries to parse the files in dtdList and extracts the XML element
-  and adds them to the global element dictionary.
+  def __init__(self, dtd_path: str) -> None:
+    self._dtds = {}
+    self._element_hooks = {}
+    self._current_elem_index = None
+    self._observers = []
+    self._parse_dtd_files(dtd_path)
   
-  Arguments:
-    dtdList {List} -- List containing DTD file paths
-  """
-
-  for dtd in dtdList:
-    with open(dtd) as source:
+  def _parse_dtd_files(self, dtd_path: str) -> None:
+    """Parse all DTD files found under dtd_path
+    
+    Arguments:
+        dtd_path {str} -- path to DTD files
+    """
+    for file in Path(dtd_path).rglob('*'):
       try:
-        content = parse_dtd_file(source)
-      except Exception as error:
-        print(error)
-        continue
-      add_dtd_content(source.name, content)
-      del content
-
-def parse_dtd_file(file):
-  return etree.DTD(file)
-
-def add_dtd_content(source=None, dtd_content=None):
-  """adds content of dtd file to element repository. A subscope
-  for the dtd file is created
+        self._dtds[file.name] = etree.DTD(str(file))
+      except Exception as e:
+        print(e)
   
-  Keyword Arguments:
-    source {String} -- path to dtd file (default: {None})
-    dtd_content {etree.DtdObject} -- parsed dtd file (default: {None})
+  def _get_element_hooks(self) -> None:
+    pass
+
+  def attach(self, observer: Any) -> None:
+    """Attach observer
+
+    Attached observers will be notified if an element is parsed
+    successfully or if a invalid element was found
+    
+    Arguments:
+        observer {Any} -- obsever 
+    """
+    self._observers.append(observer)
   
-  Raises:
-    NameError -- raised if no source path is specified
-  """
+  def _notify(self, event) -> None:
+    """Notify all attached observers of event
+    
+    Arguments:
+        event {Any} -- Event that occured
+    """
+    for observer in self._observers:
+      observer(event)
 
-  if source is None:
-    raise NameError('DTD name not defined. Cannot create subscope')
-  sub_scope = iec_xml_elements[extract_filename_from_path(source)] = dict()
-  dtd_xml_trees[extract_filename_from_path(source)] = dtd_content
+  def parse(self, file) -> None:
+    doc = etree.parse(file)
+    dtd = self._get_dtd_from_doctype(doc.docinfo.doctype)
+    return
   
-  if dtd_content is not None:
-    for elem in dtd_content.elements():
-      obj = DtdXmlObj(elem)
-      sub_scope.update({obj.name :obj})
+  def _get_dtd_from_doctype(self, doctype: str) -> etree.DTD:
+    return "test"
 
-
-def extract_filename_from_path(path):
-  """Gets filename with out extension from path
-  
-  Arguments:
-    path {String} -- Path to file
-  
-  Returns:
-    String -- filename
-  """
-
-  return os.path.splitext(os.path.basename(path))[0]
-
-
-if __name__ == '__main__':
-  dtd = get_dtd_files_from_folder('./src/dtd')
-  element_index_from_dtd_list(dtd)
 #TODO: work out simple metrics that can be counted during parsing
 #TODO parse FB xml and match with iec_elements plus verify with dtd
 #TODO init routine for parser, create parser class ?
