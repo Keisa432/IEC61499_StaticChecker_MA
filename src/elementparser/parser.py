@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from typing import Any
 from pathlib import Path
 from lxml import etree
@@ -15,7 +14,7 @@ class ElementParser:
     self._current_elem_index = None
     self._observers = []
     self._parse_dtd_files(dtd_path)
-  
+
   def _parse_dtd_files(self, dtd_path: str) -> None:
     """Parse all DTD files found under dtd_path
     
@@ -27,7 +26,7 @@ class ElementParser:
         self._dtds[file.name] = etree.DTD(str(file))
       except Exception as e:
         print(e)
-  
+
   def _get_element_hooks(self) -> None:
     pass
 
@@ -41,7 +40,7 @@ class ElementParser:
         observer {Any} -- obsever 
     """
     self._observers.append(observer)
-  
+
   def _notify(self, event) -> None:
     """Notify all attached observers of event
     
@@ -52,12 +51,48 @@ class ElementParser:
       observer(event)
 
   def parse(self, file) -> None:
-    doc = etree.parse(file)
-    dtd = self._get_dtd_from_doctype(doc.docinfo.doctype)
-    return
-  
-  def _get_dtd_from_doctype(self, doctype: str) -> etree.DTD:
-    return "test"
+    dtd = self._get_dtd_from_doctype(file)
+    for event, element in etree.iterparse(file, events=('start', 'end')):
+      if event == 'start':
+        self._validate_xml_element(element, dtd)
+        print(f'start {element}')
+      if event == 'end':
+        print(f'end {element}')
+
+  def _get_dtd_from_doctype(self, file_name: str) -> etree.DTD:
+    """Gets DTD specified by DOCTYPE of file. Returns None if
+    no match is found.
+    
+    Arguments:
+        file_name {str} -- Name of the file that is currently parsed
+    
+    Returns:
+        etree.DTD -- DTD object
+    """
+    doc_type = self._get_doctype_line(file_name)
+    result = [ self._dtds[dtd] for dtd in self._dtds.keys() if dtd in doc_type]
+    return result[0] if len(result) > 0 else None
+
+  def _get_doctype_line(self, file_name: str) -> str:
+    """Fetches the DOCTYPE line of the file
+    
+    Arguments:
+        file_name {str} -- Name of the file that is currently parsed
+    
+    Returns:
+        str -- DOCTYPE line
+    """
+    with open(file_name) as file:
+      for line in file.readlines():
+        if '!DOCTYPE' in line:
+          return line
+      return None
+
+  def _validate_xml_element(self, element, dtd: etree.DTD) -> None:
+    #valid = dtd.validate(element)
+    # print(str(dtd.error_log.filter_from_errors()[0]))
+    pass
+
 
 #TODO: work out simple metrics that can be counted during parsing
 #TODO parse FB xml and match with iec_elements plus verify with dtd

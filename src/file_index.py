@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from typing import List, Tuple, Dict
 from pathlib import Path
 import glob
