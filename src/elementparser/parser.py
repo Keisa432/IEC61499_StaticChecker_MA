@@ -67,7 +67,17 @@ class ElementParser:
       for observer in self._observers[event]:
         observer(event, data)
 
-  def parse(self, file) -> None:
+  def parse(self, file: str) -> None:
+    """Parses and validates content of file
+
+    Parses the given file. The content is validated against
+    the DTD specified by the !DOCTYPE of the given file. If this
+    function encounters invalid elements it emits an 'validationError'
+    event. If an element is  parsed it emits a 'parsedElement' event
+    
+    Arguments:
+        file {str} -- file to parse
+    """
     dtd = self._get_dtd_from_doctype(file)
     for event, element in etree.iterparse(file, events=('start', 'end')):
       if event == 'start':
@@ -83,7 +93,7 @@ class ElementParser:
 
   def _get_dtd_from_doctype(self, file_name: str) -> etree.DTD:
     """Gets DTD specified by DOCTYPE of file. Returns None if
-    no match is found.
+       no match is found.
     
     Arguments:
         file_name {str} -- Name of the file that is currently parsed
@@ -104,11 +114,13 @@ class ElementParser:
     Returns:
         str -- DOCTYPE line
     """
-    with open(file_name) as file:
-      for line in file.readlines():
-        if '!DOCTYPE' in line:
-          return line
-      return None
+    try:
+      with open(file_name) as file:
+        for line in file.readlines():
+          if '!DOCTYPE' in line:
+            return line
+    except FileNotFoundError:
+      return ''
 
   def _validate_xml_element(
       self, element: etree._Element,dtd: etree.DTD
@@ -122,7 +134,7 @@ class ElementParser:
     Raises:
         ValidationError: If element is invalid
     """
-    if dtd.validate(element) is False:
+    if dtd and dtd.validate(element) is False:
       raise ValidationError(str(dtd.error_log.filter_from_errors()[0]))
 
 
