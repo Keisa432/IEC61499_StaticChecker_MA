@@ -2,6 +2,16 @@ from typing import Any
 from pathlib import Path
 from lxml import etree
 
+class ValidationError(Exception):
+  """Thrown by the ElementParser
+
+     This error is raised by the ElementParser if
+     it encounters an invalid XML element
+  """
+  def __init__(self, message):
+    super().__init__(message)
+
+
 class ElementParser:
   """ Parser class for IEC61499 XML files
 
@@ -12,7 +22,7 @@ class ElementParser:
     self._dtds = {}
     self._element_hooks = {}
     self._current_elem_index = None
-    self._observers = []
+    self._observers = {}
     self._parse_dtd_files(dtd_path)
 
   def _parse_dtd_files(self, dtd_path: str) -> None:
@@ -21,7 +31,7 @@ class ElementParser:
     Arguments:
         dtd_path {str} -- path to DTD files
     """
-    for file in Path(dtd_path).rglob('*'):
+    for file in Path(dtd_path).rglob('**/*.dtd'):
       try:
         self._dtds[file.name] = etree.DTD(str(file))
       except Exception as e:
@@ -30,31 +40,43 @@ class ElementParser:
   def _get_element_hooks(self) -> None:
     pass
 
-  def attach(self, observer: Any) -> None:
+  def attach(self, event: str ,observer: Any) -> None:
     """Attach observer
 
     Attached observers will be notified if an element is parsed
     successfully or if a invalid element was found
     
     Arguments:
+        event {str} -- Event for which the observer will be registered
         observer {Any} -- obsever 
     """
-    self._observers.append(observer)
+    if event in self._observers:
+      self._observers[event].append(observer)
+    else:
+      self._observers[event] = []
+      self._observers[event].append(observer)
 
-  def _notify(self, event) -> None:
+  def _notify(self, event:str, data: Any) -> None:
     """Notify all attached observers of event
     
     Arguments:
-        event {Any} -- Event that occured
+        event {str} -- Event that occured
+        data {Any} -- Data of the event
     """
-    for observer in self._observers:
-      observer(event)
+    if event in self._observers:
+      for observer in self._observers[event]:
+        observer(event, data)
 
   def parse(self, file) -> None:
     dtd = self._get_dtd_from_doctype(file)
     for event, element in etree.iterparse(file, events=('start', 'end')):
       if event == 'start':
-        self._validate_xml_element(element, dtd)
+        try:
+          self._validate_xml_element(element, dtd)
+        except ValidationError as error:
+          self._notify('validationError', error)
+        #TODO call parser hook to create element
+        #TODO parent stack for context, only add interesting elements to stack e.g. only elements with parser hooks
         print(f'start {element}')
       if event == 'end':
         print(f'end {element}')
@@ -88,10 +110,20 @@ class ElementParser:
           return line
       return None
 
-  def _validate_xml_element(self, element, dtd: etree.DTD) -> None:
-    #valid = dtd.validate(element)
-    # print(str(dtd.error_log.filter_from_errors()[0]))
-    pass
+  def _validate_xml_element(
+      self, element: etree._Element,dtd: etree.DTD
+  ) -> None:
+    """Verifies that element is valid.
+    
+    Arguments:
+        element {etree._Element} -- element to verify
+        dtd {etree.DTD} -- DTD used for validation
+    
+    Raises:
+        ValidationError: If element is invalid
+    """
+    if dtd.validate(element) is False:
+      raise ValidationError(str(dtd.error_log.filter_from_errors()[0]))
 
 
 #TODO: work out simple metrics that can be counted during parsing

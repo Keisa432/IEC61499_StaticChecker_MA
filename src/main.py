@@ -4,8 +4,8 @@ from elementparser import ElementParser
 
 def main():
   index = FileIndex(r"C:\Users\Dominik\Documents\LStudioProjects\ma_test", ['.sys', '.fbt', '.res'])
-  parser = ElementParser(r"C:\Users\Dominik\python\ma\IEC61499_StaticChecker_MA\data\dtd")
-  system = index.get_file_by_name('System.sys')
+  parser = ElementParser(r"D:\LOYTEC\L-STUDIO 3.0\Studio\data\Schemas")
+  system = index.get_file_by_name('LINX.fbt')
   parser.parse(str(system))
 
 if __name__ == "__main__":
