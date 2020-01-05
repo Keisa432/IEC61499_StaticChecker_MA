@@ -25,10 +25,15 @@ def register_hooks(parser: "elementparser.ElementParser", path: str) -> None:
         if hasattr(module, 'register'):
           module.register(parser)
 
-
-
 def _get_module_list(directory: Path) -> List[str]:
-
+  """Get file names in directory
+  
+  Arguments:
+      directory {Path} -- Path object representing the directory
+  
+  Returns:
+      List[str] -- List of file names
+  """
   if directory.is_dir() is False:
     return []
 
