@@ -24,6 +24,7 @@ class ElementParser:
     self._current_elem_index = None
     self._observers = {}
     self._parse_dtd_files(dtd_path)
+    self._get_element_hooks()
 
   def _parse_dtd_files(self, dtd_path: str) -> None:
     """Parse all DTD files found under dtd_path
@@ -78,64 +79,44 @@ class ElementParser:
     Arguments:
         file {str} -- file to parse
     """
-    dtd = self._get_dtd_from_doctype(file)
-    for event, element in etree.iterparse(file, events=('start', 'end')):
-      if event == 'start':
-        try:
-          self._validate_xml_element(element, dtd)
-        except ValidationError as error:
-          self._notify('validationError', error)
-        #TODO call parser hook to create element
-        #TODO parent stack for context, only add interesting elements to stack e.g. only elements with parser hooks
-        print(f'start {element}')
-      if event == 'end':
-        print(f'end {element}')
+    doc = etree.parse(file)
+    dtd = self._get_dtd_from_doctype(doc.docinfo.doctype)
+    try:
+      self._validate_xml_tree(doc, dtd)
+    except ValidationError as error:
+      self._notify('validationError', error)
+    #TODO call parser hook to create element
+    for elem in doc.getiterator(('FB', 'EventConnections')):
+      print(elem)
 
-  def _get_dtd_from_doctype(self, file_name: str) -> etree.DTD:
+  def _get_dtd_from_doctype(self, doc_type: str) -> etree.DTD:
     """Gets DTD specified by DOCTYPE of file. Returns None if
        no match is found.
     
     Arguments:
-        file_name {str} -- Name of the file that is currently parsed
+        doc_type {str} -- DOCTYPE line of file
     
     Returns:
         etree.DTD -- DTD object
     """
-    doc_type = self._get_doctype_line(file_name)
     result = [ self._dtds[dtd] for dtd in self._dtds.keys() if dtd in doc_type]
     return result[0] if len(result) > 0 else None
 
-  def _get_doctype_line(self, file_name: str) -> str:
-    """Fetches the DOCTYPE line of the file
-    
-    Arguments:
-        file_name {str} -- Name of the file that is currently parsed
-    
-    Returns:
-        str -- DOCTYPE line
-    """
-    try:
-      with open(file_name) as file:
-        for line in file.readlines():
-          if '!DOCTYPE' in line:
-            return line
-    except FileNotFoundError:
-      return ''
-
-  def _validate_xml_element(
-      self, element: etree._Element,dtd: etree.DTD
+  def _validate_xml_tree(
+      self, tree: etree._ElementTree, dtd: etree.DTD
   ) -> None:
     """Verifies that element is valid.
     
     Arguments:
-        element {etree._Element} -- element to verify
+        tree {etree._ElementTree} -- tree to verify
         dtd {etree.DTD} -- DTD used for validation
     
     Raises:
         ValidationError: If element is invalid
     """
-    if dtd and dtd.validate(element) is False:
-      raise ValidationError(str(dtd.error_log.filter_from_errors()[0]))
+    if dtd and dtd.validate(tree) is False:
+      #TODO convert list to text and rais for each entry
+      raise ValidationError(str(dtd.error_log.filter_from_errors()))
 
 
 #TODO: work out simple metrics that can be counted during parsing
