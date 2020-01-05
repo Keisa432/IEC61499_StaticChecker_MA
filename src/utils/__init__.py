@@ -1,0 +1,1 @@
+from .hook_loader import register_hooks
