@@ -1,6 +1,7 @@
 from typing import Any
 from pathlib import Path
 from lxml import etree
+from iec_elements import FbTypeElement
 
 class ValidationError(Exception):
   """Thrown by the ElementParser
@@ -24,7 +25,6 @@ class ElementParser:
     self._current_elem_index = None
     self._observers = {}
     self._parse_dtd_files(dtd_path)
-    self._get_element_hooks()
 
   def _parse_dtd_files(self, dtd_path: str) -> None:
     """Parse all DTD files found under dtd_path
@@ -38,8 +38,8 @@ class ElementParser:
       except Exception as e:
         print(e)
 
-  def _get_element_hooks(self) -> None:
-    pass
+  def register_element_hook(self, hook_type: str, hook: Any) -> None:
+    self._element_hooks[hook_type] = hook
 
   def attach(self, event: str ,observer: Any) -> None:
     """Attach observer
@@ -85,9 +85,40 @@ class ElementParser:
       self._validate_xml_tree(doc, dtd)
     except ValidationError as error:
       self._notify('validationError', error)
-    #TODO call parser hook to create element
-    for elem in doc.getiterator(('FB', 'EventConnections')):
-      print(elem)
+    self._parse_elems_from_file(doc, file)
+
+  def _parse_elems_from_file(self, doc: etree.ElementTree, file:str) -> None:
+    """Prase Elments from given document
+    
+    Arguments:
+        doc {etree.ElementTree} -- document to parse
+        file {str} -- path to document thats currently processed
+    
+    Raises:
+        NameError: Raised if an unknown root element is encountered
+    """
+    if doc.docinfo.root_name == 'System':
+      print('parsing system')
+    elif doc.docinfo.root_name == 'FBType':
+      print('parsing FBType')
+      self._create_new_fbtype_element(doc, file)
+    else:
+      # should not happen but cover anyway
+      raise NameError(f'Unknown root element: {doc.docinfo.root}')
+
+  def _create_new_fbtype_element(self, doc: etree.ElementTree, file:str) -> None:
+    root = doc.getroot()
+    fb_elem = FbTypeElement(file,
+        root.attrib['Name'], root.tag, root.attrib['Namespace'])
+
+    for elem in doc.getiterator(('FB', 'Connection')):
+      if elem.tag == 'FB':
+        fb_elem.sub_fb.append('test')
+      elif elem.tag == 'Connection':
+        fb_elem.connections.append('event_conn')
+      else:
+        pass
+    self._notify('element', fb_elem)
 
   def _get_dtd_from_doctype(self, doc_type: str) -> etree.DTD:
     """Gets DTD specified by DOCTYPE of file. Returns None if
