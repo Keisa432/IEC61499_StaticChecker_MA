@@ -2,7 +2,6 @@
 from checkers import ValidationErrorReporter
 from file_index import FileIndex
 from elementparser import ElementParser
-import iec_elements
 
 def main():
   index = FileIndex(r"C:\Users\Dominik\Documents\LStudioProjects\ma_test", ['.sys', '.fbt', '.res'])

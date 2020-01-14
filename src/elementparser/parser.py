@@ -1,7 +1,7 @@
 from typing import Any
 from pathlib import Path
 from lxml import etree
-from iec_elements import FbTypeElement
+from iec_elements import FbType
 
 class ValidationError(Exception):
   """Thrown by the ElementParser
@@ -108,8 +108,8 @@ class ElementParser:
 
   def _create_new_fbtype_element(self, doc: etree.ElementTree, file:str) -> None:
     root = doc.getroot()
-    fb_elem = FbTypeElement(file,
-        root.attrib['Name'], root.tag, root.attrib['Namespace'])
+    fb_elem = FbType(file, root.attrib['Name'],
+        root.tag, root.attrib['Namespace'])
 
     for elem in doc.getiterator(('FB', 'Connection')):
       if elem.tag == 'FB':
