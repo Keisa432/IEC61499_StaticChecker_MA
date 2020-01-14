@@ -10,4 +10,5 @@ class FbTypeElement(BaseElement):
       BaseElement {[type]} -- [description]
   """
   sub_fb: List["FbTypeElement"] = field(default_factory=list)
-  connections: List[Any] = field(default_factory=list)
+  event_connections: List[Any] = field(default_factory=list)
+  data_connections: List[Any] = field(default_factory=list)

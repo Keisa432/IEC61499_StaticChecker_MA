@@ -114,8 +114,10 @@ class ElementParser:
     for elem in doc.getiterator(('FB', 'Connection')):
       if elem.tag == 'FB':
         fb_elem.sub_fb.append('test')
-      elif elem.tag == 'Connection':
-        fb_elem.connections.append('event_conn')
+      elif elem.tag == 'EventConnections':
+        fb_elem.event_connections.append('event_conn')
+      elif elem.tag == 'DataConnections':
+        fb_elem.data_connections.append('data_conn')
       else:
         pass
     self._notify('element', fb_elem)
