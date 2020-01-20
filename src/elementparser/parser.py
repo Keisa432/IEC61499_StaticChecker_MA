@@ -1,7 +1,7 @@
 from typing import Any
 from pathlib import Path
 from lxml import etree
-from iec_elements import FbType
+from iec_elements import FunctionBlock
 
 class ValidationError(Exception):
   """Thrown by the ElementParser
@@ -38,8 +38,15 @@ class ElementParser:
       except Exception as e:
         print(e)
 
-  def register_element_hook(self, hook_type: str, hook: Any) -> None:
-    self._element_hooks[hook_type] = hook
+  def register_element_hook(self, hook_type: str, hook: Any, parent_hook: str = None) -> None:
+    if parent_hook is not None and parent_hook in self._element_hooks:
+      self._element_hooks[parent_hook]['child_hooks'][hook_type] = hook
+    else:
+      new_hook = {}
+      new_hook['child_hooks'] = {}
+      new_hook['parse_elment'] = hook
+
+      self._element_hooks[hook_type] = new_hook
 
   def attach(self, event: str ,observer: Any) -> None:
     """Attach observer
@@ -97,18 +104,20 @@ class ElementParser:
     Raises:
         NameError: Raised if an unknown root element is encountered
     """
+    elem: FunctionBlock = None
+    
     if doc.docinfo.root_name == 'System':
       print('parsing system')
     elif doc.docinfo.root_name == 'FBType':
       print('parsing FBType')
-      self._create_new_fbtype_element(doc, file)
+      self._create_new_function_block(doc, file)
     else:
       # should not happen but cover anyway
       raise NameError(f'Unknown root element: {doc.docinfo.root}')
 
-  def _create_new_fbtype_element(self, doc: etree.ElementTree, file:str) -> None:
+  def _create_new_function_block(self, doc: etree.ElementTree, file:str) -> None:
     root = doc.getroot()
-    fb_elem = FbType(file, root.attrib['Name'],
+    fb_elem = FunctionBlock(file, root.attrib['Name'],
         root.tag, root.attrib['Namespace'])
 
     for elem in doc.getiterator(('FB', 'Connection')):
@@ -166,3 +175,4 @@ class ElementParser:
 #TODO each checker has a check function -> sorted list by prio -> do_check iterates over all checkers
 #TODO define output format of msg, write list to file , maybe GUI output?? (super extra) would be useful for graphs
 #TODO output would be filename, elment name, type (err/warn), message
+#TODO how to handle incomplete types
