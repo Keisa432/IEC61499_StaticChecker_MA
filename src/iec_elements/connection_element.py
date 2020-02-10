@@ -1,32 +1,36 @@
+from typing import List
 from dataclasses import dataclass
 from lxml import etree
 
-def register(parser):
-  """Registers parser hook at parser
-  
+def parse_connection_elements(elem: etree.ElementTree, fb:['FunctionBlock']) -> 'FunctionBlock':
+  """Parse connection elements.
+
+  This function parses all connection elements if present and adds them to the
+  passed FunctionBlock fb. This includes Event and DataConnections.
+
   Arguments:
-      parser {IEC parser} -- IEC parser to register hook at
+      elem {etree.ElementTree} -- Elementree representing document
+      fb {FunctionBlock} -- Parent FunctionBlock of connection
+
+  Returns:
+    [FunctionBlock] -- parsed FunctionBlock element
   """
-  parser.register_element_hook('Connection', parse_connection_element, 'FBType')
+  if elem.tag == 'DataConnections':
+    add_connection(fb.data_connections, 'Data', elem)
+  elif elem.tag == 'EventConnections':
+    add_connection(fb.event_connections, 'Event', elem)
+  return fb
 
-  def parse_connection_element(doc: etree.ElementTree, fb:['FunctionBlock']):
-    """Parse connection elements.
-
-    This function parses all connection elements if present and adds them to the
-    passed FunctionBlock fb. This includes Event and DataConnections.
-
-    Arguments:
-        doc {etree.ElementTree} -- Elementree representing document
-        fb {FunctionBlock} -- Parent FunctionBlock of connection
-
-    Returns:
-      [FunctionBlock] -- parsed FunctionBlock element
-    """
-    pass
+def add_connection(conn_list: List['Connection'], type: str, 
+  elem: etree.ElementTree
+) -> 'FunctionBlock':
+  for con in elem.getiterator('Connection'):
+    conn_list.append(Connection(type, con.attrib['Source'], 
+        con.attrib['Destination']))
 
 @dataclass
 class Connection:
   connection_type: str
-  conn_from: str
-  conn_to: str
+  source: str
+  dest: str
   pass

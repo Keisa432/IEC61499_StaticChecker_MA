@@ -38,15 +38,8 @@ class ElementParser:
       except Exception as e:
         print(e)
 
-  def register_element_hook(self, hook_type: str, hook: Any, parent_hook: str = None) -> None:
-    if parent_hook is not None and parent_hook in self._element_hooks:
-      self._element_hooks[parent_hook]['child_hooks'][hook_type] = hook
-    else:
-      new_hook = {}
-      new_hook['child_hooks'] = {}
-      new_hook['parse_elment'] = hook
-
-      self._element_hooks[hook_type] = new_hook
+  def register_element_hook(self, hook_type: str, hook: Any) -> None:
+    self._element_hooks[hook_type] = hook
 
   def attach(self, event: str ,observer: Any) -> None:
     """Attach observer
@@ -92,9 +85,9 @@ class ElementParser:
       self._validate_xml_tree(doc, dtd)
     except ValidationError as error:
       self._notify('validationError', error)
-    self._parse_elems_from_file(doc, file)
+    self._parse_elems_from_file(doc)
 
-  def _parse_elems_from_file(self, doc: etree.ElementTree, file:str) -> None:
+  def _parse_elems_from_file(self, doc: etree.ElementTree) -> None:
     """Prase Elments from given document
     
     Arguments:
@@ -105,31 +98,11 @@ class ElementParser:
         NameError: Raised if an unknown root element is encountered
     """
     elem: FunctionBlock = None
-    
-    if doc.docinfo.root_name == 'System':
-      print('parsing system')
-    elif doc.docinfo.root_name == 'FBType':
-      print('parsing FBType')
-      self._create_new_function_block(doc, file)
+    if doc.docinfo.root_name in self._element_hooks:
+      self._element_hooks[doc.docinfo.root_name](doc)
     else:
-      # should not happen but cover anyway
-      raise NameError(f'Unknown root element: {doc.docinfo.root}')
-
-  def _create_new_function_block(self, doc: etree.ElementTree, file:str) -> None:
-    root = doc.getroot()
-    fb_elem = FunctionBlock(file, root.attrib['Name'],
-        root.tag, root.attrib['Namespace'])
-
-    for elem in doc.getiterator(('FB', 'Connection')):
-      if elem.tag == 'FB':
-        fb_elem.sub_fb.append('test')
-      elif elem.tag == 'EventConnections':
-        fb_elem.event_connections.append('event_conn')
-      elif elem.tag == 'DataConnections':
-        fb_elem.data_connections.append('data_conn')
-      else:
-        pass
-    self._notify('element', fb_elem)
+      pass
+    self._notify('element', elem)
 
   def _get_dtd_from_doctype(self, doc_type: str) -> etree.DTD:
     """Gets DTD specified by DOCTYPE of file. Returns None if
