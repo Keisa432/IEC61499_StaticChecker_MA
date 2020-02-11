@@ -99,10 +99,8 @@ class ElementParser:
     """
     elem: FunctionBlock = None
     if doc.docinfo.root_name in self._element_hooks:
-      self._element_hooks[doc.docinfo.root_name](doc)
-    else:
-      pass
-    self._notify('element', elem)
+      elem = self._element_hooks[doc.docinfo.root_name](doc)
+      self._notify('element', elem)
 
   def _get_dtd_from_doctype(self, doc_type: str) -> etree.DTD:
     """Gets DTD specified by DOCTYPE of file. Returns None if

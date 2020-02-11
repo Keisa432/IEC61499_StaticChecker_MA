@@ -12,7 +12,7 @@ def register(parser):
   """
   parser.register_element_hook('FBType', parse_function_block_element)
 
-def parse_function_block_element(doc: etree.ElementTree):
+def parse_function_block_element(doc: etree.ElementTree) -> "FunctionBlock":
   """Parse FBType elment from doc.
 
   This function creates a FunctionBlock instance and returns it.
@@ -34,8 +34,7 @@ def parse_function_block_element(doc: etree.ElementTree):
       parse_connection_elements(elem, fb_elem)
     elif elem.tag == 'FBNetwork':
         parse_fb_network_block(elem, fb_elem)
-    else:
-      pass
+    #TODO: ECC
   return fb_elem
 
 def parse_fb_network_block(network_elem: etree.ElementTree, 
@@ -64,14 +63,22 @@ class FunctionBlock(BaseElement):
   """Class representing an FBType element
   
   Arguments:
-      BaseElement {[type]} -- [description]
+      functionblock_network {List[FbNetworkBlock]} -- List of sub function blocks
+      event_connections {List[Connection]} -- List of event connections
+      data_connections {List[Connection]} -- List of data connections
   """
-  functionblock_network: List["FunctionBlock"] = field(default_factory=list)
+  functionblock_network: List["FbNetworkBlock"] = field(default_factory=list)
   event_connections: List[Any] = field(default_factory=list)
   data_connections: List[Any] = field(default_factory=list)
 
 @dataclass
 class FbNetworkBlock(BaseElement):
+  """FBNetwork Element of a Functionblock
+  
+  Arguments:
+      fb_ref {[type]} -- Reference to FBType
+      parameters {Dict[str, any]} -- Dictionary of parameters for FB element
+  """
   fb_ref: "ElementRefercence" = field(default=None)
   parameters: Dict[str, Any] = field(default_factory=dict)
 
