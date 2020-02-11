@@ -24,7 +24,7 @@ def parse_connection_elements(elem: etree.ElementTree, fb:['FunctionBlock']) -> 
 def add_connection(conn_list: List['Connection'], type: str, 
   elem: etree.ElementTree
 ) -> 'FunctionBlock':
-  for con in elem.getiterator('Connection'):
+  for con in elem:
     conn_list.append(Connection(type, con.attrib['Source'], 
         con.attrib['Destination']))
 

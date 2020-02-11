@@ -33,13 +33,31 @@ def parse_function_block_element(doc: etree.ElementTree):
     if 'Connection' in elem.tag:
       parse_connection_elements(elem, fb_elem)
     elif elem.tag == 'FBNetwork':
-      pass
+        parse_fb_network_block(elem, fb_elem)
     else:
       pass
-    
-  #TODO params, fbnetwork
-
   return fb_elem
+
+def parse_fb_network_block(network_elem: etree.ElementTree, 
+  parent: "FunctionBlock"
+) -> None:
+  """Parse FBNetwork elements
+
+  This function parses the FB elements and its Parameters of the FBNetwork. And adds
+  them to the functionblock_network list of the parent. 
+  
+  Arguments:
+      fb {etree.ElementTree} -- element to be parsed
+      parent {FunctionBlock} -- parent element
+  """
+  for fb in network_elem.getiterator('FB'):
+    sub_block = FbNetworkBlock(fb.base, fb.attrib['Name'],
+        fb.tag, fb.attrib['Namespace'])
+
+    for param in fb.getiterator('Parameter'):
+      sub_block.parameters[param.attrib['Name']] = param.attrib['Value']
+
+    parent.functionblock_network.append(sub_block)
 
 @dataclass
 class FunctionBlock(BaseElement):
@@ -51,4 +69,9 @@ class FunctionBlock(BaseElement):
   functionblock_network: List["FunctionBlock"] = field(default_factory=list)
   event_connections: List[Any] = field(default_factory=list)
   data_connections: List[Any] = field(default_factory=list)
-  parameters: Dict[str, int] = field(default_factory=dict)
+
+@dataclass
+class FbNetworkBlock(BaseElement):
+  fb_ref: "ElementRefercence" = field(default=None)
+  parameters: Dict[str, Any] = field(default_factory=dict)
+

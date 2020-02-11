@@ -11,10 +11,10 @@ def main():
   error_reporter = ValidationErrorReporter()
   parser.attach('validationError', error_reporter)
   iec_elements.initialize(parser)
-  linx = index.get_file_by_name('LINX.fbt')
+  file = index.get_file_by_name('LINX.fbt')
   #system = index.get_file_by_name('System.sys')
   #parser.parse(str(system))
-  parser.parse(str(linx))
+  parser.parse(str(file))
   error_reporter.print_error_list()
   
 if __name__ == "__main__":

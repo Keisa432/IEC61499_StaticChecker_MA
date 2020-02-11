@@ -135,16 +135,11 @@ class ElementParser:
 
 
 #TODO: work out simple metrics that can be counted during parsing
-#TODO parse FB xml and match with iec_elements plus verify with dtd
-#TODO init routine for parser, create parser class ?
 #TODO define metric modules
 #TODO toplevel class provides add_stats -> sub module references stats
 #TODO open/close functions for reset/finish checking 
 #TODO raw metrics: nummber of fbs, fbtypes, ecc states, events, inputs, outputs, ecc vertrices
 #TODO further metrics: undefined datatypes, cycles in ecc, not reacheable ecc states, locks in ecc,...
-#TODO define how checkers know which elements to check -> list dereived from dtds?
-#TODO draw graph, what types are there!!!
-#TODO main program searches for sys file -> tries to find referenced fb/types  -> hash files to recognize if something changed? (Would need background timer/thread that checks files and makrs them as "dirty")
 #TODO each checker has a check function -> sorted list by prio -> do_check iterates over all checkers
 #TODO define output format of msg, write list to file , maybe GUI output?? (super extra) would be useful for graphs
 #TODO output would be filename, elment name, type (err/warn), message
