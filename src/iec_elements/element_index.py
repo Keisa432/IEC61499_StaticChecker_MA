@@ -8,13 +8,17 @@ class ElementReference:
   """
   id: str
   reference: Any = field(default=None)
+  reference_count: int = field(default=0)
 
 class ElementIndex:
   def __init__(self):
-    pass
+    self._elements = dict()
 
-  def add_to_index(self):
-    pass
+  def add_to_index(self, data: ElementReference):
+    self._elements[data.id] = data
 
   def get_by_id(self, id):
-    pass
+    entry = None
+    if id in self._elements:
+      entry = self._elements[id]
+    return entry

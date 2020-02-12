@@ -12,6 +12,11 @@ class FileIndex:
     self._file_index = { ext: {} for ext in file_extensions }
     self._collect_files()
 
+  def __iter__(self):
+    for _, files in self._file_index.items():
+      for _, file in files.items():
+        yield file
+
   def _collect_files(self) -> None:
     """Collects all files in search_path and stores them in hash tables. Each
        file extension has its own hash table
